@@ -7,5 +7,4 @@ A collection of machine learning projects focused on security applications, buil
 |---------|-------------|
 | [Spam-Classification](./Spam-Classification/) | SMS spam detection using Multinomial Naive Bayes with NLP preprocessing |
 
-=======
 Portfolio of machine learning security projects demonstrating practical applications in threat detection, spam filtering, and malware classification using Python and scikit-learn.
