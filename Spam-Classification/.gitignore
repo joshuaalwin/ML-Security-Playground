@@ -1,0 +1,4 @@
+sms_spam_collection/
+spam_detection_model.joblib
+__pycache__/
+.ipynb_checkpoints/
