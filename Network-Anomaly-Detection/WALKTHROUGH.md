@@ -1,4 +1,4 @@
-# Network Anomaly Detection — Walkthrough
+# Network Anomaly Detection - Walkthrough
 
 A step-by-step guide covering the theory and implementation behind this network intrusion detection project. If you're here to learn, this is for you.
 
@@ -23,19 +23,19 @@ An anomaly is something that deviates significantly from the norm. In network se
 - Network intrusions
 - Security breaches
 
-The goal is to train a model on labelled traffic — normal and attack — so it can automatically flag suspicious connections in the future.
+The goal is to train a model on labelled traffic (normal and attack) so it can automatically flag suspicious connections in the future.
 
 ### Random Forest
 
-Random Forest is an ML algorithm that builds multiple decision trees and aggregates their predictions. Each tree votes for a class, and the class receiving the **majority of votes** is chosen.
+Random Forest is an ML algorithm that builds multiple decision trees and aggregates their predictions. Each tree votes for a class, and the class that gets the **majority of votes** wins.
 
 > For regression problems, the final output is the **average** of the individual tree outputs rather than a majority vote.
 
-Three key concepts shape the construction of a Random Forest:
+Three key concepts shape how a Random Forest is built:
 
-1. **Bootstrapping** — Multiple subsets of the training data are created via sampling with replacement. Each subset trains a separate decision tree.
-2. **Tree Construction** — For each tree, a random subset of features is considered at every split, ensuring diversity and reducing correlations among trees.
-3. **Voting** — After all trees are trained, classification involves majority voting, while regression involves averaging predictions.
+1. **Bootstrapping**: Multiple subsets of the training data are created by sampling with replacement. Each subset trains a separate decision tree.
+2. **Tree Construction**: For each tree, a random subset of features is considered at every split, which keeps the trees diverse and reduces correlation between them.
+3. **Voting**: Once all trees are trained, classification uses majority voting, while regression averages the outputs.
 
 ### A Single Decision Tree
 
@@ -43,12 +43,12 @@ Before the forest, understand one tree. A decision tree splits data based on fea
 
 ```
 Is src_bytes > 1000?
-├── Yes → Is serror_rate > 0.5? → DoS
-└── No  → Is rerror_rate > 0.3? → Probe
-                               → Normal
++-- Yes -> Is serror_rate > 0.5? -> DoS
++-- No  -> Is rerror_rate > 0.3? -> Probe
+                               -> Normal
 ```
 
-The problem: a single tree can memorize training data (overfitting), making it brittle on unseen traffic. A Random Forest corrects this by averaging many diverse trees.
+The problem with a single tree is that it tends to memorize the training data (overfitting), which makes it fragile on traffic it hasn't seen. A Random Forest fixes this by averaging many diverse trees.
 
 | Property | Single Tree | Random Forest |
 |----------|-------------|---------------|
@@ -59,7 +59,7 @@ The problem: a single tree can memorize training data (overfitting), making it b
 
 ### Why It Works for Network Anomaly Detection
 
-Network traffic features (byte counts, error rates, connection flags) are heterogeneous — some categorical, some continuous, some near-zero for most samples. Random Forest handles this naturally **without requiring feature normalization or scaling**, making it well-suited to this problem.
+Network traffic features (byte counts, error rates, connection flags) are a mix of types: some categorical, some continuous, some near-zero for most samples. Random Forest handles this naturally without needing feature normalization or scaling, which makes it a solid fit for this kind of problem.
 
 ---
 
@@ -92,13 +92,13 @@ import matplotlib.pyplot as plt
 ```
 
 - `numpy` and `pandas` handle data loading and manipulation
-- `RandomForestClassifier` provides the algorithm for anomaly detection
-- `train_test_split` and `sklearn.metrics` support model evaluation and validation
-- `seaborn` and `matplotlib` assist in visualizing distributions and model results
+- `RandomForestClassifier` is the algorithm we use for anomaly detection
+- `train_test_split` and `sklearn.metrics` handle evaluation and validation
+- `seaborn` and `matplotlib` are used to visualize distributions and model results
 
 ### Defining Column Names and Loading the Data
 
-The NSL-KDD file has no header row, so column names are defined manually:
+The NSL-KDD file has no header row, so the column names are defined manually:
 
 ```python
 file_path = r'KDD+.txt'
@@ -119,24 +119,24 @@ df = pd.read_csv(file_path, names=columns)
 print(df.head())
 ```
 
-> These column names ensure each feature and label is properly identified. They include generic network statistics (`duration`, `src_bytes`, `dst_bytes`), categorical fields (`protocol_type`, `service`), and labels (`attack`, `level`) which classify the type of traffic observed.
+> These column names cover everything in the dataset: generic network stats (`duration`, `src_bytes`, `dst_bytes`), categorical fields (`protocol_type`, `service`), and labels (`attack`, `level`) that identify the type of traffic.
 
 ---
 
 ## 3. Preprocessing the Dataset
 
-The main goal is to transform raw network traffic data into a usable numeric format. We:
+The main goal here is to turn raw network traffic data into a format the model can actually use. We need to:
 
 - Turn the text label into a **binary label** (Normal vs. Attack) or a **multi-class label** (Normal / DoS / Probe / Privilege / Access)
-- Turn categorical columns like `protocol_type` and `service` into numbers using one-hot encoding
-- Select which numeric columns to feed into the model
-- Split the processed data into train / validation / test sets for evaluation
+- Convert categorical columns like `protocol_type` and `service` into numbers using one-hot encoding
+- Choose which numeric columns to feed into the model
+- Combine everything into a single feature matrix
 
-> **End result:** A clean `train_set` matrix of features (all numeric) and a target `multi_y` ready to plug into a classifier.
+> **End result:** A clean `train_set` matrix of features (all numeric) and a target vector `multi_y` ready to plug into a classifier.
 
 ### 3.1 Creating a Binary Classification Target
 
-This teaches the model a simple thing — is this connection normal or an attack?
+This just teaches the model one thing: is this connection normal or an attack?
 
 ```python
 df['attack_flag'] = df['attack'].apply(lambda a: 0 if a == 'normal' else 1)
@@ -144,11 +144,11 @@ df['attack_flag'] = df['attack'].apply(lambda a: 0 if a == 'normal' else 1)
 
 - `.apply` goes row by row on the `attack` column
 - The lambda returns `0` (normal) or `1` (attack) for each value
-- You get a clean numeric binary label that algorithms like Random Forest can use directly
+- You get a clean numeric label that algorithms like Random Forest can work with directly
 
 ### 3.2 Multi-Class Classification Target
 
-Binary classification loses information. Knowing it's a DoS attack versus a Probe matters significantly for a defender — they require completely different responses. We instead distinguish between attack families:
+Binary classification loses a lot of useful information. Knowing it's a DoS attack versus a Probe matters a lot for defenders since they call for completely different responses. So instead, we distinguish between attack families:
 
 ```python
 dos_attacks = ['apache2', 'back', 'land', 'neptune', 'mailbomb', 'pod',
@@ -171,32 +171,32 @@ def map_attack(attack):
 df['attack_map'] = df['attack'].apply(map_attack)
 ```
 
-Think of `map_attack` as a lookup table: string label → numeric class. `0` is normal; `1–4` are the four attack families.
+Think of `map_attack` as a simple lookup table from string label to numeric class. `0` is normal; `1-4` are the four attack families.
 
 | Class | Label | Description |
 |-------|-------|-------------|
 | Normal | 0 | Legitimate network traffic |
-| DoS | 1 | Denial-of-Service — floods or exhausts target resources |
-| Probe | 2 | Reconnaissance — scanning and probing for vulnerabilities |
-| Privilege | 3 | Privilege escalation — gaining root or admin access |
-| Access | 4 | Unauthorized access — exploiting credentials or services |
+| DoS | 1 | Denial-of-Service attacks that flood or exhaust target resources |
+| Probe | 2 | Reconnaissance attacks like scanning and probing for vulnerabilities |
+| Privilege | 3 | Privilege escalation to gain root or admin access |
+| Access | 4 | Unauthorized access by exploiting credentials or services |
 
 ### 3.3 Encoding Categorical Variables
 
-ML models require numeric inputs. Two columns are categorical strings — `protocol_type` (`tcp`, `udp`, `icmp`) and `service` (`http`, `ftp`, `smtp`, etc.) — which need to be encoded.
+ML models only take numeric inputs. Two columns are categorical strings (`protocol_type` and `service`) so they need to be encoded first.
 
 ```python
 features_to_encode = ['protocol_type', 'service']
 encoded = pd.get_dummies(df[features_to_encode])
 ```
 
-`pd.get_dummies` creates a column for each distinct category:
+`pd.get_dummies` creates a column for each distinct category. For example:
 - `protocol_type_tcp`, `protocol_type_udp`, `protocol_type_icmp`
-- Each new column is `1` if the row has that category, `0` otherwise
+- Each column is `1` if the row matches that category, `0` otherwise
 
 ### 3.4 Selecting Numeric Features
 
-NSL-KDD has many numeric features: some basic (duration, bytes), some content-based (`num_shells`), some traffic-based (`same_srv_rate`, etc.). We keep those that draw the strongest correlation to attack types:
+NSL-KDD has a lot of numeric features ranging from basic connection stats (duration, bytes) to content-based ones (`num_shells`) to traffic pattern ones (`same_srv_rate`). I selected the 34 that best capture the signal for each attack type:
 
 ```python
 numeric_features = [
@@ -218,12 +218,12 @@ Key features and what they signal:
 | Feature | What it captures |
 |---------|-----------------|
 | `src_bytes` / `dst_bytes` | Data volume in each direction |
-| `serror_rate` | Rate of SYN errors — high in SYN flood (DoS) |
-| `rerror_rate` | Rate of REJ errors — high in port scans (Probe) |
-| `root_shell` | Whether a root shell was obtained |
+| `serror_rate` | Rate of SYN errors, which is high in SYN flood attacks (DoS) |
+| `rerror_rate` | Rate of REJ errors, which is high in port scans (Probe) |
+| `root_shell` | Whether a root shell was obtained during the connection |
 | `num_failed_logins` | Number of failed login attempts |
-| `same_srv_rate` | Fraction of connections to the same service (high in DoS) |
-| `diff_srv_rate` | Fraction to different services (high in scanning) |
+| `same_srv_rate` | Fraction of connections to the same service, often high in DoS |
+| `diff_srv_rate` | Fraction to different services, often high in scanning |
 
 ### 3.5 Building the Final Feature Matrix
 
@@ -234,13 +234,13 @@ train_set = encoded.join(df[numeric_features])
 multi_y = df['attack_map']  # multi-class target vector
 ```
 
-The final feature matrix is a horizontal concatenation of all one-hot columns and the 34 numeric columns — fully numeric and ready for training.
+The final feature matrix stacks all one-hot columns and the 34 numeric columns side by side, giving us a fully numeric dataset ready for training.
 
 ---
 
 ## 4. Splitting into Train / Validation / Test
 
-We separate data into parts we train on, tune on, and evaluate on.
+We need to separate the data into three parts: one to train on, one to tune on, and one to evaluate on.
 
 ### Train vs. Test
 
@@ -252,15 +252,15 @@ train_X, test_X, train_y, test_y = train_test_split(
 )
 ```
 
-- `test_size=0.2` → 20% is held out as the **test set**
-- 80% remains for training
-- `random_state=1337` makes the split reproducible (same shuffle every run)
+- `test_size=0.2` holds out 20% as the **test set**
+- 80% stays for training
+- `random_state=1337` makes the split reproducible so you get the same result every run
 
-> The test set represents future unseen traffic — it is touched **only once** at the very end to estimate real-world detection performance.
+> The test set is basically future unseen traffic. It only gets touched **once** at the very end to get a realistic estimate of real-world performance.
 
 ### Training vs. Validation
 
-The 80% training portion is further split into a training set and a validation set. This is where model tuning happens:
+The 80% training portion gets split again into a training set and a validation set. This is where we tune the model:
 
 ```python
 multi_train_X, multi_val_X, multi_train_y, multi_val_y = train_test_split(
@@ -273,16 +273,16 @@ If the original dataset = 100%:
 | Split | Size |
 |-------|------|
 | Test | 20% |
-| Validation | 0.8 × 0.3 = **24%** |
-| Train (for fitting) | 0.8 × 0.7 = **56%** |
+| Validation | 0.8 x 0.3 = **24%** |
+| Train (for fitting) | 0.8 x 0.7 = **56%** |
 
 Roles:
 
-- `multi_train_X, multi_train_y` — used to fit the model
-- `multi_val_X, multi_val_y` — used to tune hyperparameters and pick the best configuration
-- `test_X, test_y` — touched only after tuning is done, for final performance numbers
+- `multi_train_X, multi_train_y`: used to fit the model
+- `multi_val_X, multi_val_y`: used to tune hyperparameters and pick the best configuration
+- `test_X, test_y`: only touched after tuning is done, for final performance numbers
 
-> This structure prevents **data leakage**: hyperparameters are never chosen based on the test set, so the final test score reflects true generalization.
+> This prevents **data leakage** since hyperparameters are never picked based on the test set, so the final score reflects true generalization.
 
 ---
 
@@ -295,11 +295,11 @@ rf_model_multi = RandomForestClassifier(random_state=1337)
 rf_model_multi.fit(multi_train_X, multi_train_y)
 ```
 
-What's happening:
+What's happening here:
 
-- `RandomForestClassifier` builds 100 decision trees on bootstrapped samples and averages their votes — this works extremely well for NSL-KDD multi-class intrusion detection
+- `RandomForestClassifier` builds 100 decision trees on bootstrapped samples and takes a majority vote. This works really well for NSL-KDD multi-class intrusion detection
 - `random_state=1337` makes the forest structure reproducible
-- `.fit(multi_train_X, multi_train_y)` lets the forest learn how feature patterns map to: Normal, DoS, Probe, Privilege, Access
+- `.fit(multi_train_X, multi_train_y)` lets the forest learn how feature patterns map to the classes: Normal, DoS, Probe, Privilege, Access
 
 ### Evaluation on the Validation Set
 
@@ -357,23 +357,23 @@ F1-Score:  0.9949
 
 What the numbers mean:
 
-- **Accuracy 0.9950** — ~99.5% of all validation flows are classified into the correct class
-- **Precision 0.9949 (weighted)** — when the model predicts a given class, it is correct ~99.5% of the time (averaged by class support)
-- **Recall 0.9950 (weighted)** — the model successfully recovers ~99.5% of the actual samples in each class (averaged by support)
-- **F1 0.9949 (weighted)** — the overall trade-off between precision and recall is extremely strong; typical for high-performing NSL-KDD classifiers
+- **Accuracy 0.9950**: ~99.5% of all validation flows were classified into the correct class
+- **Precision 0.9949 (weighted)**: when the model predicts a class, it's correct ~99.5% of the time (averaged by class support)
+- **Recall 0.9950 (weighted)**: the model catches ~99.5% of the actual samples in each class (averaged by support)
+- **F1 0.9949 (weighted)**: strong balance between precision and recall across all classes, which is what you'd expect from a well-performing NSL-KDD classifier
 
-**Why Privilege Escalation underperforms:** Only 24 validation samples total. The model rarely encounters this class during training, so it misses many instances (low recall of 0.38). This is a **class imbalance problem** — techniques like SMOTE or class weighting would help.
+**Why Privilege Escalation underperforms:** Only 24 validation samples total. The model barely sees this class during training, so it misses a lot of them (low recall of 0.38). This is a class imbalance problem, not a model quality issue. Techniques like SMOTE or class weighting would help here.
 
 ### Metric Reference
 
 | Metric | Formula | What it measures |
 |--------|---------|-----------------|
-| **Accuracy** | Correct / Total | Overall correctness |
+| **Accuracy** | Correct / Total | Overall correctness across all classes |
 | **Precision** | TP / (TP + FP) | Of predicted attacks, how many were real attacks |
 | **Recall** | TP / (TP + FN) | Of real attacks, how many were caught |
-| **F1-Score** | 2 × (P × R) / (P + R) | Harmonic mean of precision and recall |
+| **F1-Score** | 2 x (P x R) / (P + R) | Harmonic mean of precision and recall |
 
-`average='weighted'` weights each class by its support, appropriate given the strong imbalance between Normal/DoS (tens of thousands) and Privilege (tens of samples).
+`average='weighted'` weights each class by its support, which makes sense given the huge imbalance between Normal/DoS (tens of thousands of samples) and Privilege (a few dozen).
 
 ### Evaluation on the Test Set
 
@@ -403,7 +403,7 @@ F1-Score:  0.9947
 
 ![Test Confusion Matrix](Test-Confusion-Matrix.png)
 
-The test set results closely mirror validation — the model generalizes well. Privilege Escalation remains the weak point due to its tiny representation in the dataset.
+Test results are nearly identical to validation, which means the model generalizes well. Privilege Escalation is still the weak spot, again due to how underrepresented it is in the dataset.
 
 ---
 
@@ -417,7 +417,7 @@ joblib.dump(rf_model_multi, model_filename)
 print(f"Model saved to {model_filename}")
 ```
 
-`joblib.dump` serializes the entire `RandomForestClassifier` — all 100 decision trees, their split thresholds, and class mappings — to disk.
+`joblib.dump` serializes the entire fitted model (all 100 decision trees, their split thresholds, and class mappings) to disk.
 
 ### Loading and Predicting
 
@@ -426,13 +426,13 @@ loaded_model = joblib.load('network_anomaly_detection_model.joblib')
 predictions = loaded_model.predict(new_features)
 ```
 
-Loading is instant — no retraining required.
+Loading is instant, no retraining needed.
 
-> **Important:** Unlike the Spam-Classification pipeline (which wraps the vectorizer inside a sklearn `Pipeline`), feature engineering here happens in plain pandas code outside the model. When loading the saved model, you must still manually apply encoding and feature selection before calling `predict`.
+> **Worth noting:** Unlike the Spam-Classification pipeline (which wraps the vectorizer inside a sklearn `Pipeline`), feature engineering here is done in plain pandas outside the model. When loading the saved model, you still need to apply encoding and feature selection manually before calling `predict`.
 
 The workflow for predicting on new traffic:
 
 1. **Receive** raw connection record
-2. **Engineer features** — one-hot encode categoricals, select numeric columns, `reindex` to match training schema
+2. **Engineer features**: one-hot encode categoricals, select numeric columns, `reindex` to match training schema
 3. **Predict** with `loaded_model.predict(new_features)`
 4. **Map** the output integer back to a label: `{0: 'Normal', 1: 'DoS', 2: 'Probe', 3: 'Privilege', 4: 'Access'}`

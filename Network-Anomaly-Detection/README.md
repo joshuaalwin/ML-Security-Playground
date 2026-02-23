@@ -6,20 +6,20 @@ Built as part of the [Hack The Box Academy](https://academy.hackthebox.com/) **A
 
 ## Overview
 
-A complete ML pipeline that classifies network traffic as normal or one of four attack categories (DoS, Probe, Privilege Escalation, Access) using structured tabular features and a Random Forest classifier. The model achieves ~99.5% accuracy after being trained on the [NSL-KDD dataset](https://www.unb.ca/cic/datasets/nsl.html) (~125,000 records).
+This project builds a network intrusion detector using Random Forest. Trained on the [NSL-KDD dataset](https://www.unb.ca/cic/datasets/nsl.html) (~125,000 records), the model classifies network traffic as normal or one of four attack categories (DoS, Probe, Privilege Escalation, Access) with ~99.5% accuracy.
 
 ## Pipeline
 
 ```
-Raw Traffic Record → Encode Categorical Features → Select Numeric Features → Combine Features → Map Attack Labels → Train/Val/Test Split → Train Random Forest → Evaluate
+Raw Traffic Record -> Encode Categorical Features -> Select Numeric Features -> Combine Features -> Map Attack Labels -> Train/Val/Test Split -> Train Random Forest -> Evaluate
 ```
 
 ## Tech Stack
 
-- **Python** — pandas, NumPy, scikit-learn, seaborn, matplotlib
-- **Model** — Random Forest Classifier (`n_estimators=100`, `random_state=1337`)
-- **Features** — One-hot encoded categoricals (`protocol_type`, `service`) + 34 numeric traffic features
-- **Task** — Multi-class classification: Normal, DoS, Probe, Privilege Escalation, Access
+- **Python**: pandas, NumPy, scikit-learn, seaborn, matplotlib
+- **Model**: Random Forest Classifier (`n_estimators=100`, `random_state=1337`)
+- **Features**: One-hot encoded categoricals (`protocol_type`, `service`) + 34 numeric traffic features
+- **Task**: Multi-class classification (Normal, DoS, Probe, Privilege Escalation, Access)
 
 ## Results
 
@@ -32,7 +32,7 @@ Raw Traffic Record → Encode Categorical Features → Select Numeric Features �
 | Access | 0.96 | 0.92 | 0.94 | 764 |
 | **Overall** | **0.99** | **0.99** | **0.99** | **29,704** |
 
-> Privilege Escalation attacks score lower due to extreme class imbalance — only 21 test samples out of ~30k.
+> Privilege Escalation scores lower due to extreme class imbalance. There were only 21 test samples out of ~30k, so the model just doesn't see it enough during training.
 
 ## Quick Start
 

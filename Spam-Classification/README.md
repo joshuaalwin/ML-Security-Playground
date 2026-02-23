@@ -6,20 +6,20 @@ Built as part of the [Hack The Box Academy](https://academy.hackthebox.com/) **A
 
 ## Overview
 
-A complete ML pipeline that classifies SMS messages as spam or ham (legitimate) using natural language processing and a Naive Bayes classifier. The model achieves high-confidence predictions on unseen messages after being trained on the [UCI SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms+spam+collection) dataset (5,572 messages).
+This project builds an SMS spam classifier using Naive Bayes and NLP preprocessing. Trained on the [UCI SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms+spam+collection) dataset (5,572 messages), the model classifies messages as spam or ham with high confidence.
 
 ## Pipeline
 
 ```
-Raw SMS → Lowercase → Remove Punctuation/Numbers → Tokenize → Remove Stop Words → Stem → Vectorize (BoW + Bigrams) → Classify (Naive Bayes)
+Raw SMS -> Lowercase -> Remove Punctuation/Numbers -> Tokenize -> Remove Stop Words -> Stem -> Vectorize (BoW + Bigrams) -> Classify (Naive Bayes)
 ```
 
 ## Tech Stack
 
-- **Python** — pandas, NumPy, scikit-learn, NLTK
-- **Model** — Multinomial Naive Bayes with Laplace smoothing (`alpha=0.25`)
-- **Features** — Bag of Words with unigrams + bigrams via `CountVectorizer`
-- **Tuning** — GridSearchCV with 5-fold cross-validation, optimized for F1 score
+- **Python**: pandas, NumPy, scikit-learn, NLTK
+- **Model**: Multinomial Naive Bayes with Laplace smoothing (`alpha=0.25`)
+- **Features**: Bag of Words with unigrams + bigrams via `CountVectorizer`
+- **Tuning**: GridSearchCV with 5-fold cross-validation, optimized for F1 score
 
 ## Results
 
