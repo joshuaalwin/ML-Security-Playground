@@ -8,3 +8,4 @@ A collection of ML security projects I built while going through the **AI Red Te
 |---------|-------------|
 | [Spam-Classification](./Spam-Classification/) | SMS spam detection using Multinomial Naive Bayes with NLP preprocessing |
 | [Network-Anomaly-Detection](./Network-Anomaly-Detection/) | Network intrusion detection using Random Forest with multi-class traffic classification |
+| [Malware-Classification](./Malware-Classification/) | Malware family classification from binary visualization using Transfer Learning with ResNet50 |
