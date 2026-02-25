@@ -18,6 +18,7 @@ sms_spam_collection/
 *.csv
 *.tsv
 *.txt
+!requirements.txt
 *.zip
 
 # Model files (too large for GitHub)
